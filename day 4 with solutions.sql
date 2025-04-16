@@ -43,11 +43,6 @@ insert into exams values (1,'Chemistry',91),(1,'Physics',91),(1,'Maths',92)
 */
 select * from exams;
 --write a query to find students who have got same marks in Physics and Chemistry.
-select count(distinct student_id)
-from exams
-where subject in ('Physics','Chemistry')
-having count(marks)=1;
-
 select student_id,
 count(*) as total_records,
 count(distinct marks) as distinct_marks
