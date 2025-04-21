@@ -14,14 +14,23 @@ count(case when team_2 != Winner then 1 end)  as no_of_losses
 from icc_world_cup;
 --need to use subquery or CTE to solve this query
 
---using CTE
+--using subquery
 with all_teams as 
-(select team_1 as team, case when team_1=winner then 1 else 0 end as win_flag from icc_world_cup
-union all
-select team_2 as team, case when team_2=winner then 1 else 0 end as win_flag from icc_world_cup)
-select team,count(1) as total_matches_played , sum(win_flag) as matches_won,count(1)-sum(win_flag) as matches_lost
+	(select team_1 as team_name, 
+	case when team_1=winner then 1 else 0 end as win_flag,
+	case when team_1!=winner then 1 else 0 end as lose_flag
+	from icc_world_cup
+	union all
+	select team_2 as team_name, 
+	case when team_2=winner then 1 else 0 end as win_flag,
+	case when team_2!=winner then 1 else 0 end as lose_flag
+	from icc_world_cup)
+select team_name, 
+count(1) as no_of_matches_played, 
+sum(win_flag) as no_of_wins, 
+sum(lose_flag) as no_of_losses
 from all_teams
-group by team
+group by team_name;
 
 
 select * from orders;
@@ -43,7 +52,7 @@ dri_1,5,1
 dri_2,2,0
 */
 select d1.id, count(1) as total_rides,
---count(case when d1.end_loc = d2.start_loc then 1 end) as profit_ride
+--count(case when d1.end_loc = d2.start_loc then 1 end) as profit_ride or
 count(d2.id) as profit_ride --better performance using this
 from drivers d1
 left join drivers d2 on d1.id = d2.id and d1.end_loc = d2.start_loc and d1.end_time = d2.start_time
@@ -54,7 +63,7 @@ group by d1.id;
 	-- customer_name , count_of_occurence_of_n
 select customer_name, 
 len(customer_name) as length_of_customer_name,
-lower(customer_name) as lower_case_name,
+lower(customer_name) as lower_case_name, --use if case sensitive
 replace(lower(customer_name),'n','') replace_n_to_space,
 len(replace(lower(customer_name),'n','')) as new_length_of_customer_name,
 len(customer_name)-len(replace(lower(customer_name),'n','')) as count_of_occurence_of_n
