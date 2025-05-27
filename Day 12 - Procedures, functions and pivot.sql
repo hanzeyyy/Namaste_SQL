@@ -206,8 +206,6 @@ insert into orders select * from orders_back;
 --transfers all the records back
 
 select * from orders;
-
-
 ---commit and rollback---
 --commit -> any modification wil be committed and cannot be rolledback
 --rollback -> an update/modification can be rolledback
