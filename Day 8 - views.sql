@@ -1,101 +1,73 @@
---select * from orders;
--------views-------
---it copies the definition and (just) contains the physical structure but has no data stored 
-create view orders_view as 
-select * from orders;
+-- ===============================
+-- VIEWS
+-- ===============================
 
---select * from orders_view;
---NamasteSQL->Views->dbo.orders_views->Script view as->create to->copy to clipboard
---this gives the following result below
+-- Simple view on orders
+CREATE VIEW dbo.orders_view AS 
+SELECT * FROM dbo.orders;
 
-/*
-USE [NamasteSQL]
-GO
+-- Summary view by hierarchy
+CREATE VIEW dbo.orders_summary_view AS
+SELECT 
+    'category' AS hierarchy_type, 
+    category AS hierarchy_name,
+    SUM(CASE WHEN region = 'West' THEN sales ELSE 0 END) AS total_sales_in_west_region,
+    SUM(CASE WHEN region = 'East' THEN sales ELSE 0 END) AS total_sales_in_east_region
+FROM dbo.orders
+GROUP BY category
 
-/****** Object:  View [dbo].[orders_view]    Script Date: 11-12-2024 23:02:52 ******/
-SET ANSI_NULLS ON
-GO
+UNION ALL
 
-SET QUOTED_IDENTIFIER ON
-GO
+SELECT 
+    'sub_category' AS hierarchy_type, 
+    sub_category AS hierarchy_name,
+    SUM(CASE WHEN region = 'West' THEN sales ELSE 0 END) AS total_sales_in_west_region,
+    SUM(CASE WHEN region = 'East' THEN sales ELSE 0 END) AS total_sales_in_east_region
+FROM dbo.orders
+GROUP BY sub_category
 
-create view [dbo].[orders_view] as 
-select * from orders;
-GO
-*/
+UNION ALL
 
---what is the advantge of views?
---1. we can temporarily store the data and share it with anyone to see the result
-create view orders_summary_view  as
-select 'category' as hierarchy_type, category as hierarchy_name,
-sum( case  when region = 'West' then sales end) as total_sales_in_west_region,
-sum( case  when region = 'East' then sales end) as total_sales_in_east_region
-from orders
-group by category
-union all
-select 'sub_category' as hierarchy_type, sub_category as hierarchy_name,
-sum( case  when region = 'West' then sales end) as total_sales_in_west_region,
-sum( case  when region = 'East' then sales end) as total_sales_in_east_region
-from orders
-group by sub_category
-union all
-select 'ship_mode' as hierarchy_type, ship_mode as hierarchy_name,
-sum(case  when region = 'West' then sales end) as total_sales_in_west_region,
-sum(case  when region = 'East' then sales end) as total_sales_in_east_region
-from orders
-group by ship_mode;
+SELECT 
+    'ship_mode' AS hierarchy_type, 
+    ship_mode AS hierarchy_name,
+    SUM(CASE WHEN region = 'West' THEN sales ELSE 0 END) AS total_sales_in_west_region,
+    SUM(CASE WHEN region = 'East' THEN sales ELSE 0 END) AS total_sales_in_east_region
+FROM dbo.orders
+GROUP BY ship_mode;
 
-select * from orders_summary_view;
+-- ===============================
+-- CONSTRAINTS & KEYS
+-- ===============================
 
---we can change the view, drop it and change it
+-- Ensure dept.dep_id is NOT NULL and PRIMARY KEY
+ALTER TABLE dbo.dept 
+    ALTER COLUMN dep_id INT NOT NULL;
+ALTER TABLE dbo.dept 
+    ADD CONSTRAINT PK_dept PRIMARY KEY (dep_id);
 
---we can make view from another database as well
-create view emp_master as 
-select * from master.dbo.employee;
+-- Employee table with foreign key to dept
+CREATE TABLE dbo.emp (
+    emp_id INT PRIMARY KEY,
+    emp_name VARCHAR(50),
+    dept_id INT,
+    CONSTRAINT FK_emp_dept FOREIGN KEY (dept_id) REFERENCES dbo.dept(dep_id)
+);
 
-select * from master.dbo.employee;
+-- Examples of inserting data
+INSERT INTO dbo.dept VALUES (500, 'Operations');
+INSERT INTO dbo.emp VALUES (1, 'Hanzeyyy', 500);
 
--------constraint-------
------referential integrity constraint-----
---references (column name)
-select * from employee;
-select * from dept;
---in order to use referential integrity constraint, the column name should be set as primary key (not null as well)
-alter table dept alter column dep_id int not null;
-alter table dept add constraint primary_key primary key (dep_id);
+-- ===============================
+-- IDENTITY EXAMPLE
+-- ===============================
 
---let's create another table to finally use referential integrity constraint
-create table emp
-(
-	emp_id int,
-	emp_name varchar(10),
-	dept_id int references dept(dep_id) --foreign key
-)
+CREATE TABLE dbo.dept1 (
+    id INT IDENTITY(1,1) PRIMARY KEY,
+    dep_id INT,
+    dep_name VARCHAR(50)
+);
 
-insert into emp values (1, 'Hanzala', 100);
-
-select * from emp;
-select * from dept;
-
-insert into dept values (500, 'Operations');
-insert into emp values (1, 'Hanzeyyy', 500);
-
-select * from emp;
-select * from dept;
-
------identity-----
---identity(starting value, incrementing value)
-create table dept1
-(
-	id int identity(1,1),
-	dep_id int,
-	dep_name varchar(10)
-)
-
-insert into dept1(dep_id, dep_name) values (100, 'HR');
-insert into dept1(dep_id, dep_name) values (200, 'Analytics');
-insert into dept1 values (300, 'IT'); --still works
-select * from dept1;
-
------foreign key------
--- 
+INSERT INTO dbo.dept1(dep_id, dep_name) VALUES (100, 'HR');
+INSERT INTO dbo.dept1(dep_id, dep_name) VALUES (200, 'Analytics');
+INSERT INTO dbo.dept1(dep_id, dep_name) VALUES (300, 'IT');
